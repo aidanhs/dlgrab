@@ -1,15 +1,12 @@
 FROM ubuntu:14.04
 
-run apt-get update && apt-get install -y curl build-essential git-core
+RUN apt-get update && apt-get install -y curl build-essential git-core
+RUN curl -sSL https://storage.googleapis.com/golang/go1.4.1.linux-amd64.tar.gz | tar -C /usr/local -xz
+ENV PATH /usr/local/go/bin:$PATH
+ENV GOPATH /go
+ENV CGO_ENABLED 0
 
-# Install Go (this is copied from the docker Dockerfile)
-run curl -s https://go.googlecode.com/files/go1.1.1.linux-amd64.tar.gz | tar -v -C /usr/local -xz
-env PATH  /usr/local/go/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
-env GOPATH  /go
-env CGO_ENABLED 0
+COPY . /dlgrab/
+RUN cd /dlgrab && make binary
 
-add . /docker-registry.git/contrib/golang_impl
-run cd /docker-registry.git/contrib/golang_impl && make && cp bin/docker-registry /usr/local/bin/
-
-expose 5000
-cmd /usr/local/bin/docker-registry
+CMD /dlgrab/bin/dlgrab
