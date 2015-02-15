@@ -1,13 +1,17 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
-	"os"
-	"path/filepath"
 	"regexp"
+	"strings"
+	"sync"
 )
+
+var layerLock sync.Mutex
+var layerToSave string = ""
 
 type Mapping struct {
 	Method  string
@@ -36,23 +40,15 @@ func (h *Handler) GetPing(w http.ResponseWriter, r *http.Request, p [][]string) 
 
 func (h *Handler) GetImageJson(w http.ResponseWriter, r *http.Request, p [][]string) {
 	idPrefix := p[0][2]
-	if paths, err := filepath.Glob(h.DataDir + "/images/" + idPrefix + "*"); err == nil {
-		if len(paths) > 0 {
-			image := &Image{paths[0]}
-			file, err := os.Open(image.Dir + "/json")
-			if err == nil {
-				if file, err := os.Open(image.LayerPath()); err == nil {
-					if stat, err := file.Stat(); err == nil {
-						w.Header().Add("X-Docker-Size", fmt.Sprintf("%d", stat.Size()))
-					}
-				}
-				w.WriteHeader(http.StatusOK)
-				io.Copy(w, file)
-				return
-			}
-		}
+	layerLock.Lock()
+	defer layerLock.Unlock()
+	// pretend we have everything but the layer we're trying to save
+	if strings.HasPrefix(layerToSave, idPrefix) {
+		w.WriteHeader(http.StatusNotFound)
+	} else {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("{}"))
 	}
-	w.WriteHeader(http.StatusNotFound)
 }
 
 func (h *Handler) PutImageResource(w http.ResponseWriter, r *http.Request, p [][]string) {
@@ -73,12 +69,23 @@ func (h *Handler) PutRepository(w http.ResponseWriter, r *http.Request, p [][]st
 	w.Header().Add("WWW-Authenticate", `Token signature=123abc,repository="dynport/test",access=write`)
 	w.Header().Add("X-Docker-Token", "token")
 	w.WriteHeader(http.StatusOK)
-	repoName := p[0][2]
-	repo := &Repository{h.DataDir + "/repositories/" + repoName}
-	err := writeFile(repo.IndexPath(), r.Body)
+
+	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		logger.Error(err.Error())
+		return
 	}
+	datas := []map[string]interface{}{}
+	if err := json.Unmarshal(body, &datas); err != nil {
+		logger.Error(err.Error())
+		return
+	}
+	layerLock.Lock()
+	defer layerLock.Unlock()
+	for _, layer := range datas {
+		layerToSave = layer["id"].(string)
+	}
+	logger.Info(fmt.Sprintf("Will save %s", layerToSave))
 }
 
 func (h *Handler) Map(t, re string, f func(http.ResponseWriter, *http.Request, [][]string)) {
