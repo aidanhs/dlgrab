@@ -75,7 +75,7 @@ func main() {
 	var dataDir *string
 	var doDebug *bool
 
-	listenOn = flag.String("l", ":80", "Address on which to listen.")
+	listenOn = flag.String("l", ":5000", "Address on which to listen.")
 	dataDir = flag.String("d", "/data/docker_index", "Directory to store data in")
 	doDebug = flag.Bool("D", false, "set log level to debug")
 	pidFile := flag.String("p", "/var/run/docker-registry.pid", "File containing process PID")
