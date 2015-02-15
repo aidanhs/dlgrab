@@ -5,28 +5,23 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"time"
 )
 
-func writeFile(path string, r io.ReadCloser) (e error) {
-	started := time.Now()
-	logger.Info("writing to ", path)
-	e = os.MkdirAll(filepath.Dir(path), 0755)
-	if e != nil {
+func writeFile(path string, r io.ReadCloser) (err error) {
+	logger.Info("Writing file: ", filepath.Base(path))
+	err = os.MkdirAll(filepath.Dir(path), 0755)
+	if err != nil {
 		return
 	}
-
-	tmpName := path + ".tmp"
-	out, e := os.Create(tmpName)
-	if e != nil {
+	out, err := os.Create(path)
+	if err != nil {
 		return
 	}
 	defer out.Close()
-	cnt, e := io.Copy(out, r)
-	if e != nil {
+	cnt, err := io.Copy(out, r)
+	if err != nil {
 		return
 	}
-	logger.Info(fmt.Sprintf("Wrote %d bytes in %.06f", cnt, time.Now().Sub(started).Seconds()))
-	e = os.Rename(tmpName, path)
+	logger.Debug(fmt.Sprintf("Wrote %d bytes", cnt))
 	return
 }
