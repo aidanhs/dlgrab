@@ -63,6 +63,7 @@ func (h *Handler) PutImageResource(w http.ResponseWriter, r *http.Request, p [][
 	}
 }
 
+// formerly created the _index file, holding a list of dicts of the image layers
 func (h *Handler) PutRepository(w http.ResponseWriter, r *http.Request, p [][]string) {
 	h.WriteJsonHeader(w)
 	h.WriteEndpointsHeader(w, r)
