@@ -14,10 +14,10 @@ var (
 	GITCOMMIT string
 )
 
-func startServer(listenOn, dataDir string) {
+func startServer(listenOn, outDir string) {
 	logger.Info("using version ", GITCOMMIT)
 	logger.Info("starting server on ", listenOn)
-	logger.Info("using dataDir ", dataDir)
+	logger.Info("using outDir ", outDir)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill, os.Signal(syscall.SIGTERM))
@@ -27,18 +27,18 @@ func startServer(listenOn, dataDir string) {
 		os.Exit(0)
 	}()
 
-	if err := http.ListenAndServe(listenOn, NewHandler(dataDir)); err != nil {
+	if err := http.ListenAndServe(listenOn, NewHandler(outDir)); err != nil {
 		logger.Error(err.Error())
 	}
 }
 
 func main() {
 	var listenOn *string
-	var dataDir *string
+	var outDir *string
 	var doDebug *bool
 
 	listenOn = flag.String("l", ":5000", "Address on which to listen.")
-	dataDir = flag.String("d", "/data/docker_index", "Directory to store data in")
+	outDir = flag.String("d", ".", "Directory to store data in")
 	doDebug = flag.Bool("D", false, "set log level to debug")
 	flag.Parse()
 
@@ -46,5 +46,5 @@ func main() {
 	if *doDebug {
 		logger.Level = DEBUG
 	}
-	startServer(*listenOn, *dataDir)
+	startServer(*listenOn, *outDir)
 }

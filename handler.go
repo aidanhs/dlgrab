@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"path/filepath"
 	"strings"
 	"sync"
 )
@@ -20,7 +21,7 @@ type Mapping struct {
 }
 
 type Handler struct {
-	DataDir  string
+	OutDir   string
 	Mappings []*Mapping
 }
 
@@ -53,9 +54,9 @@ func (h *Handler) GetImageJson(w http.ResponseWriter, r *http.Request, p [][]str
 
 func (h *Handler) PutImageResource(w http.ResponseWriter, r *http.Request, p [][]string) {
 	imageId := p[0][2]
-	tagName := p[0][3]
+	resourceName := p[0][3]
 
-	err := writeFile(h.DataDir+"/images/"+imageId+"/"+tagName, r.Body)
+	err := writeFile(filepath.Join(h.OutDir, imageId, resourceName), r.Body)
 	if err != nil {
 		logger.Error(err.Error())
 	} else {
@@ -124,8 +125,8 @@ func DummyResponse(status int) (func(http.ResponseWriter, *http.Request, [][]str
 	}
 }
 
-func NewHandler(dataDir string) (handler *Handler) {
-	handler = &Handler{DataDir: dataDir}
+func NewHandler(outDir string) (handler *Handler) {
+	handler = &Handler{OutDir: outDir}
 
 	// this isn't a full registry
 	handler.Map("GET", "users", DummyResponse(http.StatusNotImplemented))
