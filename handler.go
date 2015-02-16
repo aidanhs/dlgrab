@@ -27,14 +27,6 @@ type Handler struct {
 	Mappings []*Mapping
 }
 
-func (h *Handler) WriteJsonHeader(w http.ResponseWriter) {
-	w.Header().Add("Content-Type", "application/json")
-}
-
-func (h *Handler) WriteEndpointsHeader(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("X-Docker-Endpoints", r.Host)
-}
-
 func (h *Handler) GetPing(w http.ResponseWriter, r *http.Request, p [][]string) {
 	w.Header().Add("X-Docker-Registry-Version", "0.0.1")
 	w.WriteHeader(200)
@@ -42,6 +34,7 @@ func (h *Handler) GetPing(w http.ResponseWriter, r *http.Request, p [][]string) 
 }
 
 func (h *Handler) GetImageJson(w http.ResponseWriter, r *http.Request, p [][]string) {
+	w.Header().Add("Content-Type", "application/json")
 	idPrefix := p[0][2]
 	layerLock.Lock()
 	defer layerLock.Unlock()
@@ -83,8 +76,7 @@ func (h *Handler) PutImageResource(w http.ResponseWriter, r *http.Request, p [][
 
 // formerly created the _index file, holding a list of dicts of the image layers
 func (h *Handler) PutRepository(w http.ResponseWriter, r *http.Request, p [][]string) {
-	h.WriteJsonHeader(w)
-	h.WriteEndpointsHeader(w, r)
+	w.Header().Add("X-Docker-Endpoints", r.Host)
 	w.Header().Add("WWW-Authenticate", `Token signature=123abc,repository="dynport/test",access=write`)
 	w.Header().Add("X-Docker-Token", "token")
 	w.WriteHeader(http.StatusOK)
