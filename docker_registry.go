@@ -26,6 +26,7 @@ func main() {
 	var outDir string
 	var doDebug bool
 	var doHelp bool
+	var doTagRemove bool
 
 	helpFd := os.Stderr
 	flag.Usage = func () {
@@ -39,6 +40,7 @@ func main() {
 	flag.BoolVar(&doHelp, []string{"h", "-help"}, false, "Pring this help text")
 	flag.StringVar(&listenOn, []string{"l"}, "127.0.0.1:5000", "Address to listen on")
 	flag.StringVar(&outDir, []string{"o"}, ".", "Directory to store data in")
+	flag.BoolVar(&doTagRemove, []string{"-clean"}, false, "Remove the temporary tag after use. WARN: Can trigger layer deletion if run on a layer with no references or children")
 	flag.BoolVar(&doDebug, []string{"-debug"}, false, "Set log level to debug")
 	flag.Parse()
 
@@ -124,14 +126,14 @@ func main() {
 
 	logger.Debug("Shim Registry Started")
 
-	err = dockerMain(client, listenOn)
+	err = dockerMain(client, listenOn, doTagRemove)
 	if err != nil {
 		logger.Error("%s", err)
 		os.Exit(1)
 	}
 }
 
-func dockerMain(client *docker.Client, regUrl string) (err error) {
+func dockerMain(client *docker.Client, regUrl string, removeTag bool) (err error) {
 	imgName := regUrl + "/" + "dlgrab_push_staging_tmp"
 	imgTag := "latest"
 
@@ -139,7 +141,7 @@ func dockerMain(client *docker.Client, regUrl string) (err error) {
 	tagOpts := docker.TagImageOptions{
 		Repo: imgName,
 		Tag: imgTag,
-		Force: false,
+		Force: true,
 	}
 	layerLock.Lock()
 	err = client.TagImage(layerId, tagOpts)
@@ -159,14 +161,19 @@ func dockerMain(client *docker.Client, regUrl string) (err error) {
 		return
 	}
 
-	logger.Debug("Removing temporary image tag")
-	removeOpts := docker.RemoveImageOptions{
-		Force: false,
-		NoPrune: true,
+	if removeTag {
+		// Unfortunately even with no-prune docker will remove a layer if the
+		// tag we've removed is the only one left
+		logger.Debug("Removing temporary image tag")
+		removeOpts := docker.RemoveImageOptions{
+			Force: false,
+			NoPrune: true,
+		}
+		err = client.RemoveImage(imgName, removeOpts)
+		if err != nil {
+			return
+		}
 	}
-	err = client.RemoveImage(imgName, removeOpts)
-	if err != nil {
-		return
-	}
+
 	return nil
 }
