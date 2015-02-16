@@ -4,6 +4,7 @@ import (
 	"github.com/aidanhs/go-dockerclient"
 	flag "github.com/docker/docker/pkg/mflag"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -22,7 +23,7 @@ var (
 )
 
 func main() {
-	var listenOn string
+	var listenOnPort int
 	var outDir string
 	var doDebug bool
 	var doHelp bool
@@ -37,10 +38,10 @@ func main() {
 		fmt.Fprintf(helpFd, "  The DOCKER_HOST environment variable overrides the default location to find the docker daemon\n")
 	}
 
-	flag.BoolVar(&doHelp, []string{"h", "-help"}, false, "Pring this help text")
-	flag.StringVar(&listenOn, []string{"l"}, "127.0.0.1:5000", "Address to listen on")
+	flag.BoolVar(&doHelp, []string{"h", "-help"}, false, "Print this help text")
+	flag.IntVar(&listenOnPort, []string{"p"}, 0, "Port to use, defaults to a random unallocated port")
 	flag.StringVar(&outDir, []string{"o"}, ".", "Directory to store data in")
-	flag.BoolVar(&doTagRemove, []string{"-clean"}, false, "Remove the temporary tag after use. WARN: Can trigger layer deletion if run on a layer with no references or children")
+	flag.BoolVar(&doTagRemove, []string{"-clean"}, false, "Remove the temporary tag after use\nWARNING: can trigger layer deletion if run on a layer with no children or other references")
 	flag.BoolVar(&doDebug, []string{"-debug"}, false, "Set log level to debug")
 	flag.Parse()
 
@@ -96,6 +97,20 @@ func main() {
 		logger.Info("Full layer id found: %s", layerId)
 	}
 	layerLock.Unlock()
+
+	logger.Debug("Attempting to probe for available port")
+	laddr := net.TCPAddr{
+		IP: net.IPv4(127, 0, 0, 1),
+		Port: listenOnPort,
+	}
+	sock, err := net.ListenTCP("tcp", &laddr)
+	if err != nil {
+		logger.Error("%s", err.Error())
+		os.Exit(1)
+	}
+	listenOnPort = sock.Addr().(*net.TCPAddr).Port
+	sock.Close()
+	listenOn := fmt.Sprintf("127.0.0.1:%d", listenOnPort)
 
 	logger.Debug("Starting shim registry on %s", listenOn)
 	go (func () {
