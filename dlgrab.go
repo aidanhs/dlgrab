@@ -100,7 +100,7 @@ func main() {
 	}
 	layerLock.Unlock()
 
-	logger.Info("Output will be written into subfolder of %s", outDir)
+	logger.Info("Layer folder will be dumped into %s", outDir)
 	layerLock.Lock()
 	layerOutDir := filepath.Join(outDir, layerId)
 	layerLock.Unlock()
