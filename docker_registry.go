@@ -20,24 +20,6 @@ var (
 	GITCOMMIT string
 )
 
-func startServer(listenOn, outDir string) {
-	logger.Debug("DLGrab version %s", GITCOMMIT)
-	logger.Debug("Starting server on %s", listenOn)
-	logger.Info("Putting output in %s", outDir)
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill, os.Signal(syscall.SIGTERM))
-	go func() {
-		sig := <-c
-		logger.Debug("Received signal '%v', exiting\n", sig)
-		os.Exit(1)
-	}()
-
-	if err := http.ListenAndServe(listenOn, NewHandler(outDir)); err != nil {
-		logger.Error("%s", err.Error())
-	}
-}
-
 func main() {
 	var listenOn string
 	var outDir string
@@ -54,7 +36,7 @@ func main() {
 	}
 
 	flag.BoolVar(&doHelp, []string{"h", "-help"}, false, "Pring this help text")
-	flag.StringVar(&listenOn, []string{"l"}, ":5000", "Address on which to listen")
+	flag.StringVar(&listenOn, []string{"l"}, "127.0.0.1:5000", "Address on which to listen")
 	flag.StringVar(&outDir, []string{"o"}, ".", "Directory to store data in")
 	flag.BoolVar(&doDebug, []string{"-debug"}, false, "Set log level to debug")
 	flag.Parse()
@@ -78,6 +60,18 @@ func main() {
 		logger.Level = DEBUG
 	}
 
+	logger.Debug("DLGrab version %s", GITCOMMIT)
+
+	logger.Info("Putting output in %s", outDir)
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill, os.Signal(syscall.SIGTERM))
+	go func() {
+		sig := <-c
+		logger.Debug("Received signal '%v', exiting\n", sig)
+		os.Exit(1)
+	}()
+
 	endpoint := os.Getenv("DOCKER_HOST")
 	if endpoint == "" {
 		endpoint = "unix:///var/run/docker.sock"
@@ -100,5 +94,9 @@ func main() {
 	}
 	layerLock.Unlock()
 
-	startServer(listenOn, outDir)
+	logger.Debug("Starting shim registry on %s", listenOn)
+	if err := http.ListenAndServe(listenOn, NewHandler(outDir)); err != nil {
+		logger.Error("%s", err.Error())
+		os.Exit(1)
+	}
 }
