@@ -43,7 +43,7 @@ func main() {
 
 	flag.BoolVar(&doHelp, []string{"h", "-help"}, false, "Print this help text")
 	flag.IntVar(&listenOnPort, []string{"p"}, 0, "Port to use, defaults to a random unallocated port")
-	flag.StringVar(&outDir, []string{"o", "-outdir"}, ".", "Directory to store data in")
+	flag.StringVar(&outDir, []string{"o", "-outdir"}, ".", "Directory to write layer to")
 	flag.BoolVar(&doTagRemove, []string{"-clean"}, false, "Remove the temporary tag after use\nWARNING: can trigger layer deletion if run on a layer with no children or other references")
 	flag.BoolVar(&doDebug, []string{"-debug"}, false, "Set log level to debug")
 	flag.BoolVar(&regFormat, []string{"-registry-format"}, false, "Output in the format a registry would use, rather than for an image export")
