@@ -1,20 +1,14 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"net/http"
 	"regexp"
 	"path/filepath"
 	"strings"
-	"sync"
 )
-
-var layerLock sync.Mutex
-var layerToSave string = ""
 
 type Mapping struct {
 	Method  string
@@ -39,7 +33,7 @@ func (h *Handler) GetImageJson(w http.ResponseWriter, r *http.Request, p [][]str
 	layerLock.Lock()
 	defer layerLock.Unlock()
 	// pretend we have everything but the layer we're trying to save
-	if strings.HasPrefix(layerToSave, idPrefix) {
+	if strings.HasPrefix(layerId, idPrefix) {
 		w.WriteHeader(http.StatusNotFound)
 	} else {
 		w.WriteHeader(http.StatusOK)
@@ -50,8 +44,16 @@ func (h *Handler) GetImageJson(w http.ResponseWriter, r *http.Request, p [][]str
 func (h *Handler) PutImageResource(w http.ResponseWriter, r *http.Request, p [][]string) {
 	imageId := p[0][2]
 	resourceName := p[0][3]
-	path := filepath.Join(h.OutDir, imageId, resourceName)
 
+	layerLock.Lock()
+	defer layerLock.Unlock()
+	if imageId != layerId {
+		logger.Error("Client tried to push layer %s, rejecting", imageId)
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
+	path := filepath.Join(h.OutDir, imageId, resourceName)
 	err := os.MkdirAll(filepath.Dir(path), 0755)
 	if err == nil {
 		logger.Info("Writing file: %s", filepath.Base(path))
@@ -74,29 +76,11 @@ func (h *Handler) PutImageResource(w http.ResponseWriter, r *http.Request, p [][
 	}
 }
 
-// formerly created the _index file, holding a list of dicts of the image layers
 func (h *Handler) PutRepository(w http.ResponseWriter, r *http.Request, p [][]string) {
 	w.Header().Add("X-Docker-Endpoints", r.Host)
 	w.Header().Add("WWW-Authenticate", `Token signature=123abc,repository="dynport/test",access=write`)
 	w.Header().Add("X-Docker-Token", "token")
 	w.WriteHeader(http.StatusOK)
-
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		logger.Error("%s", err.Error())
-		return
-	}
-	datas := []map[string]interface{}{}
-	if err := json.Unmarshal(body, &datas); err != nil {
-		logger.Error("%s", err.Error())
-		return
-	}
-	layerLock.Lock()
-	defer layerLock.Unlock()
-	for _, layer := range datas {
-		layerToSave = layer["id"].(string)
-	}
-	logger.Info("Will save layer %s", layerToSave)
 }
 
 func (h *Handler) Map(t, re string, f func(http.ResponseWriter, *http.Request, [][]string)) {

@@ -6,6 +6,7 @@ ENV PATH /usr/local/go/bin:$PATH
 ENV GOPATH /go
 ENV CGO_ENABLED 0
 
+RUN go get github.com/fsouza/go-dockerclient github.com/docker/docker/pkg/mflag
 COPY . /dlgrab/
 RUN cd /dlgrab && make binary
 
