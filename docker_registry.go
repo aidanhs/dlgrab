@@ -131,9 +131,12 @@ func main() {
 		logger.Error("%s", err)
 		os.Exit(1)
 	}
+
+	logger.Info("Export complete")
 }
 
 func dockerMain(client *docker.Client, regUrl string, removeTag bool) (err error) {
+	imgNiceName := "dlgrab_tmp"
 	imgName := regUrl + "/" + "dlgrab_push_staging_tmp"
 	imgTag := "latest"
 
@@ -143,6 +146,13 @@ func dockerMain(client *docker.Client, regUrl string, removeTag bool) (err error
 		Tag: imgTag,
 		Force: true,
 	}
+	layerLock.Lock()
+	err = client.TagImage(layerId, tagOpts)
+	layerLock.Unlock()
+	if err != nil {
+		return
+	}
+	tagOpts.Repo = imgNiceName
 	layerLock.Lock()
 	err = client.TagImage(layerId, tagOpts)
 	layerLock.Unlock()
@@ -161,15 +171,19 @@ func dockerMain(client *docker.Client, regUrl string, removeTag bool) (err error
 		return
 	}
 
+	// Unfortunately even with no-prune docker will remove a layer if the
+	// tag we've removed is the only one left. As such, we do a dance to
+	// have *two* symbolic tags on the image so we can leave one that looks
+	// slightly more aesthetically pleasing in place.
+	removeOpts := docker.RemoveImageOptions{Force: false, NoPrune: true}
+	logger.Debug("Removing ugly temporary image tag")
+	err = client.RemoveImage(imgName, removeOpts)
+	if err != nil {
+		return
+	}
 	if removeTag {
-		// Unfortunately even with no-prune docker will remove a layer if the
-		// tag we've removed is the only one left
-		logger.Debug("Removing temporary image tag")
-		removeOpts := docker.RemoveImageOptions{
-			Force: false,
-			NoPrune: true,
-		}
-		err = client.RemoveImage(imgName, removeOpts)
+		logger.Debug("Removing nice temporary image tag")
+		err = client.RemoveImage(imgNiceName, removeOpts)
 		if err != nil {
 			return
 		}
