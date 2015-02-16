@@ -15,9 +15,9 @@ var (
 )
 
 func startServer(listenOn, outDir string) {
-	logger.Info("using version ", GITCOMMIT)
-	logger.Info("starting server on ", listenOn)
-	logger.Info("using outDir ", outDir)
+	logger.Debug("DLGrab version %s", GITCOMMIT)
+	logger.Debug("Starting server on %s", listenOn)
+	logger.Info("Putting output in %s", outDir)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill, os.Signal(syscall.SIGTERM))
@@ -28,7 +28,7 @@ func startServer(listenOn, outDir string) {
 	}()
 
 	if err := http.ListenAndServe(listenOn, NewHandler(outDir)); err != nil {
-		logger.Error(err.Error())
+		logger.Error("%s", err.Error())
 	}
 }
 

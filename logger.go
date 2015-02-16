@@ -12,27 +12,26 @@ type Logger struct {
 const (
 	DEBUG = iota
 	INFO
-	WARN
 	ERROR
 )
 
-func (l *Logger) Error(s ...interface{}) {
+func (l *Logger) Error(fmtstr string, s ...interface{}) {
 	if l.Level <= ERROR {
-		str := fmt.Sprint(s...)
+		str := fmt.Sprintf(fmtstr, s...)
 		fmt.Fprintln(os.Stderr, "ERROR", str)
 	}
 }
 
-func (l *Logger) Debug(s ...interface{}) {
+func (l *Logger) Debug(fmtstr string, s ...interface{}) {
 	if l.Level <= DEBUG {
-		str := fmt.Sprint(s...)
-		fmt.Fprintln(os.Stderr, "DEBUG", str)
+		str := fmt.Sprintf(fmtstr, s...)
+		fmt.Fprintln(os.Stderr, str)
 	}
 }
 
-func (l *Logger) Info(s ...interface{}) {
+func (l *Logger) Info(fmtstr string, s ...interface{}) {
 	if l.Level <= INFO {
-		str := fmt.Sprint(s...)
-		fmt.Fprintln(os.Stderr, "INFO", str)
+		str := fmt.Sprintf(fmtstr, s...)
+		fmt.Fprintln(os.Stderr, str)
 	}
 }

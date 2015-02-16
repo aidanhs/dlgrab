@@ -54,20 +54,20 @@ func (h *Handler) PutImageResource(w http.ResponseWriter, r *http.Request, p [][
 
 	err := os.MkdirAll(filepath.Dir(path), 0755)
 	if err == nil {
-		logger.Info("Writing file: ", filepath.Base(path))
+		logger.Info("Writing file: %s", filepath.Base(path))
 
 		out, err := os.Create(path)
 		if err == nil {
 			defer out.Close()
 			cnt, err := io.Copy(out, r.Body)
 			if err == nil {
-				logger.Debug(fmt.Sprintf("Wrote %d bytes", cnt))
+				logger.Debug("Wrote %d bytes", cnt)
 			}
 		}
 	}
 
 	if err != nil {
-		logger.Error(err.Error())
+		logger.Error("%s", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 	} else {
 		w.WriteHeader(http.StatusOK)
@@ -83,12 +83,12 @@ func (h *Handler) PutRepository(w http.ResponseWriter, r *http.Request, p [][]st
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		logger.Error(err.Error())
+		logger.Error("%s", err.Error())
 		return
 	}
 	datas := []map[string]interface{}{}
 	if err := json.Unmarshal(body, &datas); err != nil {
-		logger.Error(err.Error())
+		logger.Error("%s", err.Error())
 		return
 	}
 	layerLock.Lock()
@@ -96,7 +96,7 @@ func (h *Handler) PutRepository(w http.ResponseWriter, r *http.Request, p [][]st
 	for _, layer := range datas {
 		layerToSave = layer["id"].(string)
 	}
-	logger.Info(fmt.Sprintf("Will save %s", layerToSave))
+	logger.Info("Will save layer %s", layerToSave)
 }
 
 func (h *Handler) Map(t, re string, f func(http.ResponseWriter, *http.Request, [][]string)) {
@@ -120,16 +120,16 @@ func (h *Handler) doHandle(w http.ResponseWriter, r *http.Request) (ok bool) {
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	logger.Info(fmt.Sprintf("Got request %s %s", r.Method, r.URL.String()))
+	logger.Debug("Got request %s %s", r.Method, r.URL.String())
 	if ok := h.doHandle(w, r); !ok {
-		logger.Info("returning 404")
+		logger.Debug("Returning 404")
 		http.NotFound(w, r)
 	}
 }
 
 func DummyResponse(status int) (func(http.ResponseWriter, *http.Request, [][]string)) {
 	return func (w http.ResponseWriter, r *http.Request, p [][]string) {
-		logger.Info(fmt.Sprintf("ignoring request, returning %d", status))
+		logger.Debug("Ignoring request, returning %d", status)
 		w.WriteHeader(status)
 	}
 }
