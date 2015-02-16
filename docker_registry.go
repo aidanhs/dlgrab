@@ -4,6 +4,7 @@ import (
 	"github.com/aidanhs/go-dockerclient"
 	flag "github.com/docker/docker/pkg/mflag"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -29,6 +30,7 @@ func main() {
 	var doDebug bool
 	var doHelp bool
 	var doTagRemove bool
+	var regFormat bool
 
 	helpFd := os.Stderr
 	flag.Usage = func () {
@@ -41,9 +43,10 @@ func main() {
 
 	flag.BoolVar(&doHelp, []string{"h", "-help"}, false, "Print this help text")
 	flag.IntVar(&listenOnPort, []string{"p"}, 0, "Port to use, defaults to a random unallocated port")
-	flag.StringVar(&outDir, []string{"o"}, ".", "Directory to store data in")
+	flag.StringVar(&outDir, []string{"o", "-outdir"}, ".", "Directory to store data in")
 	flag.BoolVar(&doTagRemove, []string{"-clean"}, false, "Remove the temporary tag after use\nWARNING: can trigger layer deletion if run on a layer with no children or other references")
 	flag.BoolVar(&doDebug, []string{"-debug"}, false, "Set log level to debug")
+	flag.BoolVar(&regFormat, []string{"-registry-format"}, false, "Output in the format a registry would use, rather than for an image export")
 	flag.Parse()
 
 	if len(flag.Args()) != 1 {
@@ -106,6 +109,9 @@ func main() {
 		logger.Error("%s", err.Error())
 		os.Exit(1)
 	}
+	if !regFormat {
+		ioutil.WriteFile(filepath.Join(layerOutDir, "VERSION"), []byte("1.0"), 0644)
+	}
 
 	logger.Debug("Attempting to probe for available port")
 	laddr := net.TCPAddr{
@@ -123,7 +129,7 @@ func main() {
 
 	logger.Debug("Starting shim registry on %s", listenOn)
 	go (func () {
-		if err := http.ListenAndServe(listenOn, NewHandler(outDir)); err != nil {
+		if err := http.ListenAndServe(listenOn, NewHandler(outDir, regFormat)); err != nil {
 			logger.Error("%s", err.Error())
 			os.Exit(1)
 		}

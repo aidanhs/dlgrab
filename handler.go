@@ -17,8 +17,9 @@ type Mapping struct {
 }
 
 type Handler struct {
-	OutDir   string
-	Mappings []*Mapping
+	OutDir    string
+	RegFormat bool
+	Mappings  []*Mapping
 }
 
 func (h *Handler) GetPing(w http.ResponseWriter, r *http.Request, p [][]string) {
@@ -51,6 +52,18 @@ func (h *Handler) PutImageResource(w http.ResponseWriter, r *http.Request, p [][
 		logger.Error("Client tried to push layer %s, rejecting", imageId)
 		w.WriteHeader(http.StatusForbidden)
 		return
+	}
+
+	if !h.RegFormat {
+		logger.Debug("Considering %s for special handling")
+		// Specifically skipping "checksum" here, but any new junk as well
+		if resourceName != "layer" && resourceName != "json" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		if resourceName == "layer" {
+			resourceName = "layer.tar"
+		}
 	}
 
 	path := filepath.Join(h.OutDir, layerId, resourceName)
@@ -93,9 +106,11 @@ func (h *Handler) doHandle(w http.ResponseWriter, r *http.Request) (ok bool) {
 		}
 		if res := mapping.Regexp.FindAllStringSubmatch(r.URL.String(), -1); len(res) > 0 {
 			mapping.Handler(w, r, res)
+			r.Body.Close()
 			return true
 		}
 	}
+	r.Body.Close()
 	return false
 }
 
@@ -114,8 +129,8 @@ func DummyResponse(status int) (func(http.ResponseWriter, *http.Request, [][]str
 	}
 }
 
-func NewHandler(outDir string) (handler *Handler) {
-	handler = &Handler{OutDir: outDir}
+func NewHandler(outDir string, regFormat bool) (handler *Handler) {
+	handler = &Handler{OutDir: outDir, RegFormat: regFormat}
 
 	// this isn't a full registry
 	handler.Map("GET", "users", DummyResponse(http.StatusNotImplemented))
