@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"os"
 	"net/http"
 	"regexp"
 	"path/filepath"
@@ -55,10 +57,25 @@ func (h *Handler) GetImageJson(w http.ResponseWriter, r *http.Request, p [][]str
 func (h *Handler) PutImageResource(w http.ResponseWriter, r *http.Request, p [][]string) {
 	imageId := p[0][2]
 	resourceName := p[0][3]
+	path := filepath.Join(h.OutDir, imageId, resourceName)
 
-	err := writeFile(filepath.Join(h.OutDir, imageId, resourceName), r.Body)
+	err := os.MkdirAll(filepath.Dir(path), 0755)
+	if err == nil {
+		logger.Info("Writing file: ", filepath.Base(path))
+
+		out, err := os.Create(path)
+		if err == nil {
+			defer out.Close()
+			cnt, err := io.Copy(out, r.Body)
+			if err == nil {
+				logger.Debug(fmt.Sprintf("Wrote %d bytes", cnt))
+			}
+		}
+	}
+
 	if err != nil {
 		logger.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
 	} else {
 		w.WriteHeader(http.StatusOK)
 	}
