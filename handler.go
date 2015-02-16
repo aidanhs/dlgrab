@@ -53,18 +53,14 @@ func (h *Handler) PutImageResource(w http.ResponseWriter, r *http.Request, p [][
 		return
 	}
 
-	path := filepath.Join(h.OutDir, imageId, resourceName)
-	err := os.MkdirAll(filepath.Dir(path), 0755)
+	path := filepath.Join(h.OutDir, layerId, resourceName)
+	logger.Info("Writing file: %s", filepath.Base(path))
+	out, err := os.Create(path)
 	if err == nil {
-		logger.Info("Writing file: %s", filepath.Base(path))
-
-		out, err := os.Create(path)
+		defer out.Close()
+		cnt, err := io.Copy(out, r.Body)
 		if err == nil {
-			defer out.Close()
-			cnt, err := io.Copy(out, r.Body)
-			if err == nil {
-				logger.Debug("Wrote %d bytes", cnt)
-			}
+			logger.Debug("Wrote %d bytes", cnt)
 		}
 	}
 

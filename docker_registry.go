@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"sync"
 	"syscall"
 	"time"
@@ -66,8 +67,6 @@ func main() {
 
 	logger.Debug("DLGrab version %s", GITCOMMIT)
 
-	logger.Info("Putting output in %s", outDir)
-
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill, os.Signal(syscall.SIGTERM))
 	go func() {
@@ -97,6 +96,16 @@ func main() {
 		logger.Info("Full layer id found: %s", layerId)
 	}
 	layerLock.Unlock()
+
+	logger.Info("Output will be written into subfolder of %s", outDir)
+	layerLock.Lock()
+	layerOutDir := filepath.Join(outDir, layerId)
+	layerLock.Unlock()
+	err = os.Mkdir(layerOutDir, 0755)
+	if err != nil {
+		logger.Error("%s", err.Error())
+		os.Exit(1)
+	}
 
 	logger.Debug("Attempting to probe for available port")
 	laddr := net.TCPAddr{
