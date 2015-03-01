@@ -11,7 +11,7 @@ DLGrab shims the api endpoints docker touches when pushing an image. If
 Docker starts expecting different responses from these endpoints, DLGrab may
 stop working.
 
-That said, it's probably more robust that trying to export directly from the
+That said, it's probably more robust than trying to export directly from the
 filesystem.
 
 ## Build dlgrab
