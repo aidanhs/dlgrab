@@ -1,9 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"github.com/aidanhs/go-dockerclient"
 	flag "github.com/docker/docker/pkg/mflag"
-	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -32,7 +32,7 @@ func main() {
 	var regFormat bool
 
 	helpFd := os.Stderr
-	flag.Usage = func () {
+	flag.Usage = func() {
 		fmt.Fprintf(helpFd, "Usage for %s [flags...] LAYER\n", os.Args[0])
 		fmt.Fprintf(helpFd, "  LAYER: layer id to export, or image name to export top layer of\n")
 		flag.PrintDefaults()
@@ -112,7 +112,7 @@ func main() {
 	}
 
 	logger.Debug("Attempting to probe for available port")
-	laddr := net.TCPAddr{ IP: net.IPv4(127, 0, 0, 1), Port: 0 }
+	laddr := net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 0}
 	sock, err := net.ListenTCP("tcp", &laddr)
 	if err != nil {
 		logger.Error("%s", err.Error())
@@ -122,7 +122,7 @@ func main() {
 	sock.Close()
 
 	logger.Debug("Starting shim registry on %s", listenOn)
-	go (func () {
+	go (func() {
 		if err := http.ListenAndServe(listenOn, NewHandler(outDir, regFormat)); err != nil {
 			logger.Error("%s", err.Error())
 			os.Exit(1)
@@ -166,8 +166,8 @@ func dockerMain(client *docker.Client, regUrl string, removeTag bool) (err error
 
 	logger.Debug("Tagging image into temporary repo")
 	tagOpts := docker.TagImageOptions{
-		Repo: imgName,
-		Tag: imgTag,
+		Repo:  imgName,
+		Tag:   imgTag,
 		Force: true,
 	}
 	layerLock.Lock()
@@ -187,8 +187,8 @@ func dockerMain(client *docker.Client, regUrl string, removeTag bool) (err error
 	logger.Debug("Pushing image")
 	pushOpts := docker.PushImageOptions{
 		Registry: "",
-		Name: imgName,
-		Tag: imgTag,
+		Name:     imgName,
+		Tag:      imgTag,
 	}
 	err = client.PushImage(pushOpts, docker.AuthConfiguration{})
 	if err != nil {

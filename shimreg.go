@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 	"io"
-	"os"
 	"net/http"
-	"regexp"
+	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -122,8 +122,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func DummyResponse(status int) (func(http.ResponseWriter, *http.Request, [][]string)) {
-	return func (w http.ResponseWriter, r *http.Request, p [][]string) {
+func DummyResponse(status int) func(http.ResponseWriter, *http.Request, [][]string) {
+	return func(w http.ResponseWriter, r *http.Request, p [][]string) {
 		logger.Debug("Ignoring request, returning %d", status)
 		w.WriteHeader(status)
 	}
