@@ -31,7 +31,6 @@ filesystem.
       --debug=false              Set log level to debug
       -h, --help=false           Print this help text
       -o, --outdir="."           Directory to write layer to
-      -p=0                       Port to use, defaults to a random unallocated port
       --registry-format=false    Output in the format a registry would use, rather than for an image export
     
       The DOCKER_HOST environment variable overrides the default location to find the docker daemon

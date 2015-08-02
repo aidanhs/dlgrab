@@ -25,7 +25,6 @@ var (
 )
 
 func main() {
-	var listenOnPort int
 	var outDir string
 	var doDebug bool
 	var doHelp bool
@@ -42,7 +41,6 @@ func main() {
 	}
 
 	flag.BoolVar(&doHelp, []string{"h", "-help"}, false, "Print this help text")
-	flag.IntVar(&listenOnPort, []string{"p"}, 0, "Port to use, defaults to a random unallocated port")
 	flag.StringVar(&outDir, []string{"o", "-outdir"}, ".", "Directory to write layer to")
 	flag.BoolVar(&doTagRemove, []string{"-clean"}, false, "Remove the temporary tag after use\nWARNING: can trigger layer deletion if run on a layer with no children or other references")
 	flag.BoolVar(&doDebug, []string{"-debug"}, false, "Set log level to debug")
@@ -114,18 +112,14 @@ func main() {
 	}
 
 	logger.Debug("Attempting to probe for available port")
-	laddr := net.TCPAddr{
-		IP: net.IPv4(127, 0, 0, 1),
-		Port: listenOnPort,
-	}
+	laddr := net.TCPAddr{ IP: net.IPv4(127, 0, 0, 1), Port: 0 }
 	sock, err := net.ListenTCP("tcp", &laddr)
 	if err != nil {
 		logger.Error("%s", err.Error())
 		os.Exit(1)
 	}
-	listenOnPort = sock.Addr().(*net.TCPAddr).Port
+	listenOn := fmt.Sprintf("127.0.0.1:%d", sock.Addr().(*net.TCPAddr).Port)
 	sock.Close()
-	listenOn := fmt.Sprintf("127.0.0.1:%d", listenOnPort)
 
 	logger.Debug("Starting shim registry on %s", listenOn)
 	go (func () {
