@@ -6,7 +6,16 @@ ENV PATH /usr/local/go/bin:$PATH
 ENV GOPATH /go
 ENV CGO_ENABLED 0
 
-RUN go get github.com/aidanhs/go-dockerclient github.com/docker/docker/pkg/mflag
+RUN mkdir $GOPATH && cd $GOPATH && \
+	git clone https://github.com/fsouza/go-dockerclient.git && \
+	git clone https://github.com/docker/docker.git && \
+	cd go-dockerclient && git checkout a48995f21b2b00e5fc && cd .. && \
+	mkdir -p src/github.com/fsouza && \
+	mkdir -p src/github.com/docker && \
+	ln -s $(pwd)/go-dockerclient src/github.com/fsouza && \
+	ln -s $(pwd)/docker src/github.com/docker && \
+	go get github.com/fsouza/go-dockerclient && \
+	go get github.com/docker/docker/pkg/mflag
 COPY . /dlgrab/
 RUN cd /dlgrab && make check && make binary
 

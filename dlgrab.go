@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/aidanhs/go-dockerclient"
 	flag "github.com/docker/docker/pkg/mflag"
+	"github.com/fsouza/go-dockerclient"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -201,13 +201,13 @@ func dockerMain(client *docker.Client, regUrl string, removeTag bool) (err error
 	// slightly more aesthetically pleasing in place.
 	removeOpts := docker.RemoveImageOptions{Force: false, NoPrune: true}
 	logger.Debug("Removing ugly temporary image tag")
-	err = client.RemoveImage(imgName, removeOpts)
+	err = client.RemoveImageExtended(imgName, removeOpts)
 	if err != nil {
 		return
 	}
 	if removeTag {
 		logger.Debug("Removing nice temporary image tag")
-		err = client.RemoveImage(imgNiceName, removeOpts)
+		err = client.RemoveImageExtended(imgNiceName, removeOpts)
 		if err != nil {
 			return
 		}
