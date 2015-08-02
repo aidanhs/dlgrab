@@ -8,6 +8,6 @@ ENV CGO_ENABLED 0
 
 RUN go get github.com/aidanhs/go-dockerclient github.com/docker/docker/pkg/mflag
 COPY . /dlgrab/
-RUN cd /dlgrab && make binary
+RUN cd /dlgrab && make check && make binary
 
 CMD /dlgrab/bin/dlgrab
