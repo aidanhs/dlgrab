@@ -22,4 +22,10 @@ check:
 	rm diff
 
 binary:
-	go build -a -ldflags "-X main.GITCOMMIT $(GIT_COMMIT)$(GIT_STATUS)" -o ./bin/dlgrab
+	# static build - https://github.com/golang/go/issues/9344
+	go build \
+	    -a \
+	    -tags netgo \
+	    -installsuffix cgo \
+	    -ldflags "-X main.GITCOMMIT $(GIT_COMMIT)$(GIT_STATUS)" \
+	    -o ./bin/dlgrab
