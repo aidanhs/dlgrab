@@ -14,12 +14,26 @@ stop working.
 That said, it's probably more robust than trying to export directly from the
 filesystem.
 
-## Build dlgrab
+## Get dlgrab
+
+Build:
 
     $ git clone https://github.com/aidanhs/dlgrab.git
     $ cd dlgrab
     $ make
     $ ./dlgrab
+
+Download:
+
+    $ wget -O dlgrab https://github.com/aidanhs/dlgrab/releases/download/0.2/dlgrab-linux-x64
+    $ ./dlgrab
+
+Docker pull:
+
+    $ IMG=aidanhs/dlgrab:0.2
+    $ docker pull $IMG
+    $ alias dlgrab='docker run --rm -v $(pwd):/out -v /var/run/docker.sock:/var/run/docker.sock $IMG
+    $ dlgrab
 
 ## Usage
 
