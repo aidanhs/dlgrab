@@ -15,7 +15,7 @@ RUN mkdir $GOPATH && cd $GOPATH && \
 	ln -s $(pwd)/go-dockerclient src/github.com/fsouza && \
 	ln -s $(pwd)/docker src/github.com/docker && \
 	go get github.com/fsouza/go-dockerclient && \
-	go get github.com/docker/docker/pkg/mflag
+	go get github.com/getgauge/mflag
 COPY . /dlgrab/
 RUN cd /dlgrab && make check && make binary
 
