@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	flag "github.com/docker/docker/pkg/mflag"
+	flag "github.com/getgauge/mflag"
 	"github.com/fsouza/go-dockerclient"
 	"io/ioutil"
 	"net"
